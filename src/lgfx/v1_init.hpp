@@ -44,6 +44,7 @@ Contributors:
 #include "v1/panel/Panel_S6D04K1.hpp"
 #include "v1/panel/Panel_SSD1306.hpp"
 #include "v1/panel/Panel_SSD1327.hpp"
+#include "v1/panel/Panel_SSD1322.hpp"
 #include "v1/panel/Panel_SSD1331.hpp"
 #include "v1/panel/Panel_SSD1351.hpp"
 #include "v1/panel/Panel_SSD1963.hpp"
