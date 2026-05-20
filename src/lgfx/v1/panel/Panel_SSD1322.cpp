@@ -68,13 +68,12 @@ namespace lgfx
 
     for (size_t i = 0; auto cmds = getInitCommands(i); i++)
     {
-      size_t idx = 0;
-      while (cmds[idx] != 0xFF || cmds[idx + 1] != 0xFF) ++idx;
-      if (idx) { _bus->writeBytes(cmds, idx, false, true); }
+      command_list(cmds); 
     }
 
     setInvert(_invert);
     setRotation(_rotation);
+    delay(150);
     endWrite();
 
     return true;
@@ -244,7 +243,10 @@ namespace lgfx
   void Panel_SSD1322::setBrightness(uint8_t brightness)
   {
     startWrite();
-    _bus->writeCommand(0xC1 | brightness << 8, 16);
+    
+    _bus->writeCommand(0xC1, 8);
+    _bus->writeBytes(&brightness, 1, true, false);
+    
     endWrite();
   }
 
@@ -269,18 +271,31 @@ namespace lgfx
 
     uint_fast8_t xs = _range_mod.left  >> 1;
     uint_fast8_t xe = _range_mod.right >> 1;
-    uint_fast8_t col_ofs = _cfg.offset_x >> 1;
 
     uint_fast8_t nbytes = xe - xs + 1;
 
+    uint8_t start_col = (_range_mod.left  + _cfg.offset_x) >> 2;
+    uint8_t end_col   = (_range_mod.right + _cfg.offset_x) >> 2;
+
+    uint8_t start_row = _range_mod.top + _cfg.offset_y;
+    uint8_t end_row   = _range_mod.bottom + _cfg.offset_y;
+
+    uint8_t col_args[2] = { start_col, end_col };
+    _bus->writeCommand(CMD_CASET, 8);
+    _bus->writeBytes(col_args, 2, true, false);
+
+    uint8_t row_args[2] = { start_row, end_row };
+    _bus->writeCommand(CMD_RASET, 8);
+    _bus->writeBytes(row_args, 2, true, false);
+
+    _bus->writeCommand(CMD_WRITERAM, 8);
+
     for (uint_fast16_t row = _range_mod.top; row <= _range_mod.bottom; ++row)
     {
-      uint_fast8_t yaddr = static_cast<uint_fast8_t>(row + _cfg.offset_y);
-      _bus->writeCommand(CMD_CASET | (uint32_t)(xs + col_ofs) << 8 | (uint32_t)(xe + col_ofs) << 16, 24);
-      _bus->writeCommand(CMD_RASET | (uint32_t)yaddr << 8 | (uint32_t)yaddr << 16, 24);
-      _bus->writeCommand(CMD_WRITERAM, 8);
       auto buf = &_buf[xs + row * ((_cfg.panel_width + 1) >> 1 )];
       _bus->writeBytes(buf, nbytes, true, true);
+      
+      _bus->wait(); 
     }
 
     _range_mod.top    = INT16_MAX;
