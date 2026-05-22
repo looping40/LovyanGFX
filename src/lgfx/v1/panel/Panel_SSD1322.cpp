@@ -71,9 +71,7 @@ namespace lgfx
       command_list(cmds); 
     }
 
-    setInvert(_invert);
     setRotation(_rotation);
-    delay(150);
     endWrite();
 
     return true;
@@ -259,43 +257,44 @@ namespace lgfx
 
   void Panel_SSD1322::display(uint_fast16_t x, uint_fast16_t y, uint_fast16_t w, uint_fast16_t h)
   {
-    if (0 < w && 0 < h)
-    {
-      _range_mod.left   = std::min<int16_t>(_range_mod.left  , x        );
-      _range_mod.right  = std::max<int16_t>(_range_mod.right , x + w - 1);
-      _range_mod.top    = std::min<int16_t>(_range_mod.top   , y        );
+    if (0 < w && 0 < h) {
+      _range_mod.left = std::min<int16_t>(_range_mod.left, x);
+      _range_mod.right = std::max<int16_t>(_range_mod.right, x + w - 1);
+      _range_mod.top = std::min<int16_t>(_range_mod.top, y);
       _range_mod.bottom = std::max<int16_t>(_range_mod.bottom, y + h - 1);
     }
+    if (_range_mod.empty()) return;
 
-    if (_range_mod.empty()) { return; }
-
-    uint_fast8_t xs = _range_mod.left  >> 1;
-    uint_fast8_t xe = _range_mod.right >> 1;
-
-    uint_fast8_t nbytes = xe - xs + 1;
-
-    uint8_t start_col = (_range_mod.left  + _cfg.offset_x) >> 2;
+    // L'adresse de colonne SSD1322 contrôle 4 pixels horizontaux (soit 2 octets)
+    uint8_t start_col = (_range_mod.left + _cfg.offset_x) >> 2;
     uint8_t end_col   = (_range_mod.right + _cfg.offset_x) >> 2;
-
     uint8_t start_row = _range_mod.top + _cfg.offset_y;
     uint8_t end_row   = _range_mod.bottom + _cfg.offset_y;
 
-    uint8_t col_args[2] = { start_col, end_col };
-    _bus->writeCommand(CMD_CASET, 8);
-    _bus->writeBytes(col_args, 2, true, false);
-
+    // Définition de la fenêtre verticale (lignes)
     uint8_t row_args[2] = { start_row, end_row };
     _bus->writeCommand(CMD_RASET, 8);
     _bus->writeBytes(row_args, 2, true, false);
 
+        uint8_t col_args[2] = { start_col, end_col };
+        _bus->writeCommand(CMD_CASET, 8);
+        _bus->writeBytes(col_args, 2, true, false);
+
+    // Commande d'écriture en RAM
     _bus->writeCommand(CMD_WRITERAM, 8);
 
-    for (uint_fast16_t row = _range_mod.top; row <= _range_mod.bottom; ++row)
+    // Calcul du Stride (128 octets par ligne pour un écran de 256 pixels de large)
+    uint_fast16_t stride = (_cfg.panel_width + 1) >> 1; 
+    
+    // Calcul de l'index de départ dans _buf et du nombre d'octets à transférer par ligne
+    uint_fast16_t byte_offset_x = start_col * 2 - (_cfg.offset_x >> 1);
+    uint_fast16_t bytes_to_write = (end_col - start_col + 1) * 2;
+
+    // Envoi des données ligne par ligne
+    for (uint_fast16_t row = start_row; row <= end_row; ++row)
     {
-      auto buf = &_buf[xs + row * ((_cfg.panel_width + 1) >> 1 )];
-      _bus->writeBytes(buf, nbytes, true, true);
-      
-      _bus->wait(); 
+      uint_fast16_t buf_idx = byte_offset_x + (row - _cfg.offset_y) * stride;
+      _bus->writeBytes(&_buf[buf_idx], bytes_to_write, true, false);
     }
 
     _range_mod.top    = INT16_MAX;
@@ -304,6 +303,6 @@ namespace lgfx
     _range_mod.bottom = 0;
   }
 
-//----------------------------------------------------------------------------
- }
-}
+  } //namespace v1
+} //namespace lgfx
+

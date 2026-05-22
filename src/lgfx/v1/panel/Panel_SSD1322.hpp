@@ -35,7 +35,7 @@ namespace lgfx
       _cfg.memory_width  = _cfg.panel_width  = 256;
       _cfg.memory_height = _cfg.panel_height = 64;
       // NHD 256x64: RAM column offset (see U8g2 u8x8_ssd1322_256x64_display_info default_x_offset 0x1c)
-      _cfg.offset_x = 0x38;
+      _cfg.offset_x = 112;
     }
 
     bool init(bool use_reset) override;
@@ -77,27 +77,27 @@ namespace lgfx
       // NHD 256x64 style init (from U8g2 u8x8_d_ssd1322_256x64_init_seq) + display on
       static constexpr uint8_t list0[] =
       {
-        CMD_CMDLOCK , 0x12,
-        CMD_SLPIN   ,
-        0xB3        , 0x91,
-        0xCA        , 0x3F,
-        0xA2        , 0x00,
-        0xA1        , 0x00,
-        0xA0        , 0x06, 0x11,
-        0xAB        , 0x01,
-        0xB4        , 0xA0, 0xFD,
-        0xC1        , 0x9F,
-        0xC7        , 0x0F,
-        0xB9        ,
-        0xB1        , 0xE2,
-        0xD1        , 0xA2, 0x20,
-        0xBB        , 0x1F,
-        0xB6        , 0x08,
-        0xBE        , 0x07,
-        CMD_INVOFF  ,
-        0xA9        ,
-        CMD_SLPOUT  ,
-        0xFF,0xFF,
+        CMD_CMDLOCK , 1, 0x12,   // Commande 0xFD, 1 argument : 0x12
+        CMD_SLPIN   , 0,         // Commande 0xAE, 0 argument
+        0xB3        , 1, 0x91,   // Commande 0xB3, 1 argument : 0x91
+        0xCA        , 1, 0x3F,   // Commande 0xCA, 1 argument : 0x3F
+        0xA2        , 1, 0x00,   // Commande 0xA2, 1 argument : 0x00
+        0xA1        , 1, 0x00,   // Commande 0xA1, 1 argument : 0x00
+        0xA0        , 2, 0x06, 0x11, // Commande 0xA0, 2 arguments : 0x06, 0x01
+        0xAB        , 1, 0x01,   // Commande 0xAB, 1 argument : 0x01
+        0xB4        , 2, 0xA0, 0xFD, // Commande 0xB4, 2 arguments : 0xA0, 0xFD
+        0xC1        , 1, 0x9F,   // Commande 0xC1, 1 argument : 0x9F
+        0xC7        , 1, 0x0F,   // Commande 0xC7, 1 argument : 0x0F
+        0xB9        , 0,          // Commande 0xB9, 0 argument
+        0xB1        , 1, 0xE2,   // Commande 0xB1, 1 argument : 0xE2
+        0xD1        , 2, 0xA2, 0x20, // Commande 0xD1, 2 arguments : 0xA2, 0x20
+        0xBB        , 1, 0x1F,   // Commande 0xBB, 1 argument : 0x1F
+        0xB6        , 1, 0x08,   // Commande 0xB6, 1 argument : 0x08
+        0xBE        , 1, 0x07,   // Commande 0xBE, 1 argument : 0x07
+        CMD_INVOFF  , 0,         // Commande 0xA6, 0 argument
+        0xA9        , 0,         // Commande 0xA9, 0 argument
+        CMD_SLPOUT  , 0,         // Commande 0xAF, 0 argument
+        0xFF        , 0xFF,      // Marqueur de fin obligatoire pour command_list
       };
       switch (listno)
       {
